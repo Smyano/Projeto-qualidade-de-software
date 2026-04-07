@@ -11,12 +11,14 @@ body {
 
 input,
 textarea,
+select,
 button {
   font: inherit;
 }
 
 input,
-textarea {
+textarea,
+select {
   width: 100%;
   padding: 12px 14px;
   border: 1px solid #d1d5db;
@@ -26,7 +28,8 @@ textarea {
 }
 
 input:focus,
-textarea:focus {
+textarea:focus,
+select:focus {
   outline: none;
   border-color: #003e64;
   box-shadow: 0 0 0 3px rgba(0, 62, 100, 0.12);
