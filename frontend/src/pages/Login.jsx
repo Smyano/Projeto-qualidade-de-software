@@ -10,7 +10,7 @@ function Login() {
   const { login } = useAuth();
   const navigate = useNavigate();
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
 
     if (!email || !senha) {
@@ -18,8 +18,12 @@ function Login() {
       return;
     }
 
-    login(email);
-    navigate("/livros");
+    try {
+      await login(email, senha);
+      navigate("/livros");
+    } catch (error) {
+      setErro("Email ou senha inválidos.");
+    }
   }
 
   return (
@@ -47,6 +51,7 @@ function Login() {
         <h1 style={{ marginTop: 0, marginBottom: "10px", color: "#003e64" }}>
           Bookup
         </h1>
+
         <p style={{ marginTop: 0, color: "#6b7280", marginBottom: "24px" }}>
           Entre para acessar sua biblioteca
         </p>

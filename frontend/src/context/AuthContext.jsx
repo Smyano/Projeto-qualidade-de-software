@@ -1,4 +1,5 @@
 import { createContext, useContext, useState } from "react";
+import { loginUsuario } from "../services/authService.js";
 
 const AuthContext = createContext();
 
@@ -8,14 +9,17 @@ export function AuthProvider({ children }) {
     return usuarioSalvo ? JSON.parse(usuarioSalvo) : null;
   });
 
-  function login(email) {
-    const usuarioFake = {
-      nome: email.split("@")[0],
-      email
-    };
+  async function login(email, senha) {
+    const resposta = await loginUsuario({ email, senha });
 
-    localStorage.setItem("usuario", JSON.stringify(usuarioFake));
-    setUsuario(usuarioFake);
+    if (!resposta.ok) {
+      throw new Error("Email ou senha inválidos.");
+    }
+
+    const usuarioLogado = await resposta.json();
+
+    localStorage.setItem("usuario", JSON.stringify(usuarioLogado));
+    setUsuario(usuarioLogado);
   }
 
   function logout() {
