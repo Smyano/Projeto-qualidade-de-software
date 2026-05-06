@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx";
 
 function Login() {
@@ -22,7 +22,7 @@ function Login() {
       await login(email, senha);
       navigate("/livros");
     } catch (error) {
-      setErro("Email ou senha inválidos.");
+      setErro(error.message || "Email ou senha inválidos.");
     }
   }
 
@@ -89,6 +89,12 @@ function Login() {
         <button type="submit" style={{ width: "100%" }}>
           Entrar
         </button>
+        <p style={{ marginTop: "14px", textAlign: "center", color: "#6b7280" }}>
+  Ainda não tem conta?{" "}
+  <Link to="/cadastro" style={{ color: "#003e64", fontWeight: "600" }}>
+    Criar conta
+  </Link>
+</p>
       </form>
     </div>
   );

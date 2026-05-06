@@ -13,7 +13,8 @@ export function AuthProvider({ children }) {
     const resposta = await loginUsuario({ email, senha });
 
     if (!resposta.ok) {
-      throw new Error("Email ou senha inválidos.");
+      const erro = await resposta.json();
+      throw new Error(erro.mensagem || "Email ou senha inválidos.");
     }
 
     const usuarioLogado = await resposta.json();
