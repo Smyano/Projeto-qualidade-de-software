@@ -27,5 +27,5 @@ jobs:
       - name: Dar permissão ao Maven Wrapper
         run: chmod +x mvnw
 
-      - name: Rodar testes
-        run: ./mvnw test
+      - name: Rodar testes com cobertura
+        run: ./mvnw clean test
