@@ -29,3 +29,9 @@ jobs:
 
       - name: Rodar testes com cobertura
         run: ./mvnw clean test
+
+      - name: Salvar relatório JaCoCo
+        uses: actions/upload-artifact@v4
+        with:
+          name: relatorio-jacoco
+          path: bookup/target/site/jacoco
