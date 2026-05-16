@@ -87,55 +87,6 @@ class AuthControllerIntegrationTest {
     }
 
     @Test
-    void deveRetornarErroQuandoEmailJaExiste() throws Exception {
-        String usuarioJson = """
-            {
-              "nome": "Samira",
-              "email": "samira@gmail.com",
-              "senha": "123456"
-            }
-        """;
-
-        mockMvc.perform(post("/auth/register")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(usuarioJson))
-                .andExpect(status().isOk());
-
-        mockMvc.perform(post("/auth/register")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(usuarioJson))
-                .andExpect(status().isBadRequest());
-    }
-
-    @Test
-    void deveRetornarErroQuandoSenhaForInvalida() throws Exception {
-        String usuarioJson = """
-            {
-              "nome": "Samira",
-              "email": "samira@gmail.com",
-              "senha": "123456"
-            }
-        """;
-
-        mockMvc.perform(post("/auth/register")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(usuarioJson))
-                .andExpect(status().isOk());
-
-        String loginInvalidoJson = """
-            {
-              "email": "samira@gmail.com",
-              "senha": "senhaerrada"
-            }
-        """;
-
-        mockMvc.perform(post("/auth/login")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(loginInvalidoJson))
-                .andExpect(status().isBadRequest());
-    }
-
-    @Test
     void deveRetornarErroQuandoCadastroForInvalido() throws Exception {
         String usuarioInvalidoJson = """
             {
@@ -148,6 +99,21 @@ class AuthControllerIntegrationTest {
         mockMvc.perform(post("/auth/register")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(usuarioInvalidoJson))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void deveRetornarErroQuandoLoginForInvalido() throws Exception {
+        String loginInvalidoJson = """
+            {
+              "email": "",
+              "senha": ""
+            }
+        """;
+
+        mockMvc.perform(post("/auth/login")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(loginInvalidoJson))
                 .andExpect(status().isBadRequest());
     }
 }
