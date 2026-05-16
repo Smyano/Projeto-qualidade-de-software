@@ -1,135 +1,119 @@
 package bookup;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.when;
-
-import java.util.Optional;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.MediaType;
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
+import org.springframework.test.web.servlet.MockMvc;
+import org.testcontainers.containers.MongoDBContainer;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
 
-import bookup.dto.AuthResponse;
-import bookup.dto.LoginRequest;
-import bookup.dto.RegisterRequest;
-import bookup.model.Usuario;
 import bookup.repository.UsuarioRepository;
-import bookup.service.AuthService;
 
-import static org.mockito.Mockito.mock;
+@SpringBootTest
+@AutoConfigureMockMvc
+@Testcontainers
+class AuthControllerIntegrationTest {
 
-class AuthServiceTest {
+    @Container
+    static MongoDBContainer mongoDBContainer = new MongoDBContainer("mongo:7.0");
 
+    @DynamicPropertySource
+    static void configurarMongo(DynamicPropertyRegistry registry) {
+        registry.add("spring.data.mongodb.uri", mongoDBContainer::getReplicaSetUrl);
+    }
+
+    @Autowired
+    private MockMvc mockMvc;
+
+    @Autowired
     private UsuarioRepository usuarioRepository;
-    private PasswordEncoder passwordEncoder;
-    private AuthService authService;
 
     @BeforeEach
-    void setup() {
-        usuarioRepository = mock(UsuarioRepository.class);
-        passwordEncoder = mock(PasswordEncoder.class);
-        authService = new AuthService(usuarioRepository, passwordEncoder);
+    void limparBanco() {
+        usuarioRepository.deleteAll();
     }
 
     @Test
-    void deveRegistrarUsuarioComSucesso() {
-        RegisterRequest request = new RegisterRequest();
-        request.setNome("Samira");
-        request.setEmail("samira@gmail.com");
-        request.setSenha("123456");
+    void deveCadastrarUsuarioComSucesso() throws Exception {
+        String usuarioJson = """
+            {
+              "nome": "Samira",
+              "email": "samira@gmail.com",
+              "senha": "123456"
+            }
+        """;
 
-        Usuario usuarioSalvo = new Usuario();
-        usuarioSalvo.setId("1");
-        usuarioSalvo.setNome("Samira");
-        usuarioSalvo.setEmail("samira@gmail.com");
-        usuarioSalvo.setSenha("senhaCriptografada");
-
-        when(usuarioRepository.findByEmail("samira@gmail.com")).thenReturn(Optional.empty());
-        when(passwordEncoder.encode("123456")).thenReturn("senhaCriptografada");
-        when(usuarioRepository.save(any(Usuario.class))).thenReturn(usuarioSalvo);
-
-        AuthResponse response = authService.registrar(request);
-
-        assertEquals("1", response.getId());
-        assertEquals("Samira", response.getNome());
-        assertEquals("samira@gmail.com", response.getEmail());
+        mockMvc.perform(post("/auth/register")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(usuarioJson))
+                .andExpect(status().isOk());
     }
 
     @Test
-    void deveLancarErroQuandoEmailJaExiste() {
-        RegisterRequest request = new RegisterRequest();
-        request.setNome("Samira");
-        request.setEmail("samira@gmail.com");
-        request.setSenha("123456");
+    void deveFazerLoginComSucesso() throws Exception {
+        String usuarioJson = """
+            {
+              "nome": "Samira",
+              "email": "samira@gmail.com",
+              "senha": "123456"
+            }
+        """;
 
-        Usuario usuarioExistente = new Usuario();
-        usuarioExistente.setEmail("samira@gmail.com");
+        mockMvc.perform(post("/auth/register")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(usuarioJson))
+                .andExpect(status().isOk());
 
-        when(usuarioRepository.findByEmail("samira@gmail.com")).thenReturn(Optional.of(usuarioExistente));
+        String loginJson = """
+            {
+              "email": "samira@gmail.com",
+              "senha": "123456"
+            }
+        """;
 
-        RuntimeException exception = assertThrows(RuntimeException.class, () -> {
-            authService.registrar(request);
-        });
-
-        assertEquals("Email já cadastrado.", exception.getMessage());
+        mockMvc.perform(post("/auth/login")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(loginJson))
+                .andExpect(status().isOk());
     }
 
     @Test
-    void deveFazerLoginComSucesso() {
-        LoginRequest request = new LoginRequest();
-        request.setEmail("samira@gmail.com");
-        request.setSenha("123456");
+    void deveRetornarErroQuandoCadastroForInvalido() throws Exception {
+        String usuarioInvalidoJson = """
+            {
+              "nome": "",
+              "email": "emailerrado",
+              "senha": ""
+            }
+        """;
 
-        Usuario usuario = new Usuario();
-        usuario.setId("1");
-        usuario.setNome("Samira");
-        usuario.setEmail("samira@gmail.com");
-        usuario.setSenha("senhaCriptografada");
-
-        when(usuarioRepository.findByEmail("samira@gmail.com")).thenReturn(Optional.of(usuario));
-        when(passwordEncoder.matches("123456", "senhaCriptografada")).thenReturn(true);
-
-        AuthResponse response = authService.login(request);
-
-        assertEquals("1", response.getId());
-        assertEquals("Samira", response.getNome());
-        assertEquals("samira@gmail.com", response.getEmail());
+        mockMvc.perform(post("/auth/register")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(usuarioInvalidoJson))
+                .andExpect(status().isBadRequest());
     }
 
     @Test
-    void deveLancarErroQuandoUsuarioNaoExiste() {
-        LoginRequest request = new LoginRequest();
-        request.setEmail("naoexiste@gmail.com");
-        request.setSenha("123456");
+    void deveRetornarErroQuandoLoginForInvalido() throws Exception {
+        String loginInvalidoJson = """
+            {
+              "email": "",
+              "senha": ""
+            }
+        """;
 
-        when(usuarioRepository.findByEmail("naoexiste@gmail.com")).thenReturn(Optional.empty());
-
-        RuntimeException exception = assertThrows(RuntimeException.class, () -> {
-            authService.login(request);
-        });
-
-        assertEquals("Usuário não encontrado.", exception.getMessage());
-    }
-
-    @Test
-    void deveLancarErroQuandoSenhaForInvalida() {
-        LoginRequest request = new LoginRequest();
-        request.setEmail("samira@gmail.com");
-        request.setSenha("senhaerrada");
-
-        Usuario usuario = new Usuario();
-        usuario.setEmail("samira@gmail.com");
-        usuario.setSenha("senhaCriptografada");
-
-        when(usuarioRepository.findByEmail("samira@gmail.com")).thenReturn(Optional.of(usuario));
-        when(passwordEncoder.matches("senhaerrada", "senhaCriptografada")).thenReturn(false);
-
-        RuntimeException exception = assertThrows(RuntimeException.class, () -> {
-            authService.login(request);
-        });
-
-        assertEquals("Senha inválida.", exception.getMessage());
+        mockMvc.perform(post("/auth/login")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(loginInvalidoJson))
+                .andExpect(status().isBadRequest());
     }
 }
