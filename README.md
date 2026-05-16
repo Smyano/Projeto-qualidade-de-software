@@ -54,3 +54,15 @@ BOOKUP/
 ├── bookup/        → Backend Spring Boot
 ├── frontend/      → Frontend React
 └── README.md
+---
+
+# 📌 Status do Projeto
+
+Projeto em desenvolvimento acadêmico, com foco em qualidade de software, testes automatizados, integração contínua e cobertura mínima de testes.
+
+---
+
+# 👩‍💻 Desenvolvido por
+
+Lucas Serafim
+Samira Yano
